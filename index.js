@@ -15,7 +15,6 @@ app.use(cors());
 
 const dbURL = process.env.DB_URL; //Mongo DB URL
 
-
 // MiddleWare To verify Token
 const verifyJwt = async (req, res, next) => {
   const token = await req.header("auth-token");
@@ -97,6 +96,30 @@ app.delete("/delete-user/:id", verifyJwt, async (req, res) => {
     res.status(200).send({
       message: "employess-details deleted",
     });
+    clientInfo.close();
+  } catch (error) {
+    console.log(error);
+    res.send(500);
+  }
+});
+
+//TO search a collection in DB for email name phone and address
+app.get("/search/:key", verifyJwt, async (req, res) => {
+  try {
+    let clientInfo = await mongoClient.connect(dbURL);
+    let db = clientInfo.db("employess-details");
+    let data = await db
+      .collection("employess")
+      .find({
+        $or: [
+          { name: new RegExp(req.params.key, "i") },
+          { email: new RegExp(req.params.key, "i") },
+          { phone: new RegExp(req.params.key, "i") },
+          { address: new RegExp(req.params.key, "i") },
+        ],
+      })
+      .toArray();
+    res.send(data);
     clientInfo.close();
   } catch (error) {
     console.log(error);
